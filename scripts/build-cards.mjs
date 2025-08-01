@@ -6,57 +6,30 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 // Validation schemas
-console.log('Loading Zod schemas...');
-
 const CardKindSchema = z.enum(['profile', 'goal', 'hobby', 'skill', 'project']);
 const LineKindSchema = z.enum(['uses', 'inspires', 'supports', 'relates']);
 const BadgeSchema = z.enum(['NEW', 'UPDATED', 'DRAFT']);
 
-// Debug function to check schema shape
-function assertZodShape(name, schema) {
-  if (!schema || !schema._zod || schema._zod.def?.type !== 'object') return;
-  const shape = schema._zod.def.shape;
-  const bad = Object.entries(shape).filter(([_, v]) => !v || !v._zod);
-  if (bad.length) {
-    throw new Error(
-      `[${name}] invalid Zod shape entries: ` +
-      bad.map(([k]) => k).join(', ') +
-      `. Check imports/optional chaining.`
-    );
-  }
-  console.log(`✅ ${name} shape validation passed`);
-}
-
-// Build schemas with explicit fallbacks
-const MediaSchema = z.object({
-  type: z.enum(['image', 'none']),
-  src: z.string().optional(),
-  alt: z.string().optional(),
-});
-
-const PosSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-});
-
-// Build CardSchema with safe references
-console.log('Building CardSchema...');
 const CardSchema = z.object({
   id: z.string(),
   kind: CardKindSchema,
   title: z.string(),
   subtitle: z.string().optional(),
-  media: MediaSchema.optional(),
+  media: z.object({
+    type: z.enum(['image', 'none']),
+    src: z.string().optional(),
+    alt: z.string().optional(),
+  }).optional(),
   tags: z.array(z.string()).optional(),
   badges: z.array(BadgeSchema).optional(),
   meta: z.record(z.any()).optional(),
   href: z.string().optional(),
-  pos: PosSchema.optional(),
+  pos: z.object({
+    x: z.number(),
+    y: z.number(),
+  }).optional(),
   body: z.string().optional(),
 }).passthrough();
-
-console.log('CardSchema created, checking shape...');
-assertZodShape('CardSchema', CardSchema);
 
 const LineSchema = z.object({
   id: z.string(),
@@ -122,46 +95,12 @@ class CardBuilder {
       // Build card object
       const card = this.buildCard(id, frontmatter, body, filePath);
       
-      // Validate card with detailed error handling
-      try {
-        console.log(`About to validate card for ${filePath}:`);
-        console.log('Card data:', JSON.stringify(card, null, 2));
-        console.log('CardSchema has _zod:', !!CardSchema._zod);
-        console.log('CardSchema shape:', Object.keys(CardSchema._zod.def.shape));
-        
-        // Check nested schemas
-        const mediaSchema = CardSchema._zod.def.shape.media;
-        console.log('Media schema exists:', !!mediaSchema);
-        if (mediaSchema) {
-          console.log('Media schema type:', mediaSchema.constructor.name);
-          console.log('Media schema _zod:', !!mediaSchema._zod);
-        }
-        
-        const posSchema = CardSchema._zod.def.shape.pos;
-        console.log('Pos schema exists:', !!posSchema);
-        if (posSchema) {
-          console.log('Pos schema type:', posSchema.constructor.name);
-          console.log('Pos schema _zod:', !!posSchema._zod);
-        }
-        
-        console.log('Starting safeParse...');
-        const cardResult = CardSchema.safeParse(card);
-        console.log('safeParse completed');
-        
-        if (!cardResult.success) {
-          this.errors.push({
-            type: 'validation',
-            message: `Invalid card schema: ${cardResult.error.message}`,
-            file: filePath,
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Error during validation:', error);
-        console.error('Error stack:', error.stack);
+      // Validate card
+      const cardResult = CardSchema.safeParse(card);
+      if (!cardResult.success) {
         this.errors.push({
           type: 'validation',
-          message: `Zod validation crashed: ${error.message} (at: ${error.stack})`,
+          message: `Invalid card schema: ${cardResult.error.message}`,
           file: filePath,
         });
         return;

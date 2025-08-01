@@ -6,10 +6,30 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 // Validation schemas
-const CardKindSchema = z.enum(['profile', 'goal', 'hobby', 'skill', 'project']);
-const LineKindSchema = z.enum(['uses', 'inspires', 'supports', 'relates']);
-const BadgeSchema = z.enum(['NEW', 'UPDATED', 'DRAFT']);
+console.log('Loading Zod schemas...');
 
+const CardKindSchema = z.enum(['profile', 'goal', 'hobby', 'skill', 'project']);
+console.log('CardKindSchema created:', CardKindSchema);
+
+const LineKindSchema = z.enum(['uses', 'inspires', 'supports', 'relates']);
+console.log('LineKindSchema created:', LineKindSchema);
+
+const BadgeSchema = z.enum(['NEW', 'UPDATED', 'DRAFT']);
+console.log('BadgeSchema created:', BadgeSchema);
+
+// Test basic schema construction
+try {
+  const testSchema = z.string();
+  console.log('Basic string schema test:', testSchema);
+  testSchema.parse('test');
+  console.log('Basic string schema works');
+} catch (error) {
+  console.error('Basic Zod test failed:', error);
+  throw error;
+}
+
+// Build CardSchema step by step
+console.log('Building CardSchema...');
 const CardSchema = z.object({
   id: z.string(),
   kind: CardKindSchema,
@@ -30,6 +50,9 @@ const CardSchema = z.object({
   }).optional(),
   body: z.string().optional(),
 }).passthrough();
+
+console.log('CardSchema created successfully:', CardSchema);
+console.log('CardSchema._zod:', CardSchema._zod);
 
 const LineSchema = z.object({
   id: z.string(),

@@ -14,7 +14,7 @@ pos:
 
 # React & TypeScript Expertise
 
-I've been working with React for 4+ years and TypeScript for 3+ years. This combination has become my go-to stack for building scalable, maintainable frontend applications.
+I've been working with React for 3+ years and TypeScript for 3+ years. This combination has become my go-to stack for building scalable, maintainable frontend applications.
 
 ## Key Areas of Expertise
 

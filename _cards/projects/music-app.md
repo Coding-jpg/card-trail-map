@@ -18,7 +18,7 @@ metrics:
 links:
   demo: "https://soundscape-demo.com"
   repo: "https://github.com/alexdev/soundscape"
-uses: ["skill-react", "skill-nodejs", "skill-python"]
+uses: ["skill-react", "skill-nodejs"]
 inspired_by: ["hobby-music"]
 supports: ["goal-q1-2025"]
 pos:

@@ -95,16 +95,21 @@ class CardBuilder {
       // Build card object
       const card = this.buildCard(id, frontmatter, body, filePath);
       
-      // Debug: Log card structure before validation
-      console.log(`Processing ${filePath}:`, JSON.stringify(card, null, 2));
-      
-      // Validate card
-      const cardResult = CardSchema.safeParse(card);
-      if (!cardResult.success) {
-        console.error(`Zod validation error for ${filePath}:`, cardResult.error);
+      // Validate card with detailed error handling
+      try {
+        const cardResult = CardSchema.safeParse(card);
+        if (!cardResult.success) {
+          this.errors.push({
+            type: 'validation',
+            message: `Invalid card schema: ${cardResult.error.message}`,
+            file: filePath,
+          });
+          return;
+        }
+      } catch (error) {
         this.errors.push({
           type: 'validation',
-          message: `Invalid card schema: ${cardResult.error.message}`,
+          message: `Zod validation crashed: ${error.message} (at: ${error.stack})`,
           file: filePath,
         });
         return;
@@ -135,17 +140,10 @@ class CardBuilder {
   }
 
   buildCard(id, frontmatter, body, filePath) {
-    // Debug: Log frontmatter structure
-    console.log(`Building card for ${filePath}:`, {
-      id,
-      frontmatter,
-      bodyLength: body?.length || 0
-    });
-    
     // Generate initial position based on kind and index
     const pos = frontmatter.pos || this.generatePosition(frontmatter.kind, id);
     
-    const card = {
+    return {
       id,
       kind: frontmatter.kind,
       title: frontmatter.title,
@@ -158,9 +156,6 @@ class CardBuilder {
       pos,
       body: body.trim() || undefined,
     };
-    
-    console.log(`Built card:`, card);
-    return card;
   }
 
   buildMeta(frontmatter) {

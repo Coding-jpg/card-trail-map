@@ -29,7 +29,7 @@ const CardSchema = z.object({
     y: z.number(),
   }).optional(),
   body: z.string().optional(),
-});
+}).passthrough();
 
 const LineSchema = z.object({
   id: z.string(),

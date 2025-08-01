@@ -23,11 +23,11 @@ const CARD_COLORS: Record<CardKind, string> = {
 };
 
 const CARD_BACKGROUNDS: Record<CardKind, string> = {
-  profile: 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900',
-  goal: 'bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-900 dark:to-sky-800',
-  hobby: 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900 dark:to-amber-800',
-  skill: 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900 dark:to-emerald-800',
-  project: 'bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900 dark:to-violet-800',
+  profile: 'bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700',
+  goal: 'bg-gradient-to-br from-sky-900 to-sky-950 border-sky-700',
+  hobby: 'bg-gradient-to-br from-amber-900 to-amber-950 border-amber-700',
+  skill: 'bg-gradient-to-br from-emerald-900 to-emerald-950 border-emerald-700',
+  project: 'bg-gradient-to-br from-violet-900 to-violet-950 border-violet-700',
 };
 
 export const Card = memo<CardProps>(({ 

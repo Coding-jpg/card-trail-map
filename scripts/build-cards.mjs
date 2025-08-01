@@ -22,7 +22,7 @@ const CardSchema = z.object({
   }).optional(),
   tags: z.array(z.string()).optional(),
   badges: z.array(BadgeSchema).optional(),
-  meta: z.record(z.any()).optional(),
+  meta: z.object({}).catchall(z.unknown()).optional(),
   href: z.string().optional(),
   pos: z.object({
     x: z.number(),

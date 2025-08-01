@@ -36,9 +36,7 @@ jobs:
       run: npm ci
       
     - name: Generate data files
-      run: |
-        npm run gen:cards
-        npm run gen:trails
+      run: node scripts/generate-data.mjs
         
     - name: Build application
       run: npm run build

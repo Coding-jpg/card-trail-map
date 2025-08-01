@@ -13,7 +13,7 @@ interface BoardProps {
   className?: string;
   onCardSelect?: (cardId: string) => void;
   onCardDoubleClick?: (cardId: string) => void;
-  isStoryMode?: boolean;
+  controller?: any; // BoardController from parent
 }
 
 export function Board({ 
@@ -22,57 +22,29 @@ export function Board({
   className,
   onCardSelect,
   onCardDoubleClick,
-  isStoryMode = false
+  controller
 }: BoardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [isFilterDockOpen, setIsFilterDockOpen] = useState(false);
-  const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   
-  const boardController = useBoardController({
+  // Use external controller if provided, otherwise create internal one
+  const internalController = useBoardController({
     cards,
     lines,
     onStateChange: (state) => {
-      // Could persist to localStorage here
       localStorage.setItem('boardState', JSON.stringify({
         transform: state.transform,
-        filters: {
-          ...state.filters,
-          kinds: Array.from(state.filters.kinds),
-          tags: Array.from(state.filters.tags),
-        }
       }));
     }
   });
-
+  
+  const boardController = controller || internalController;
   const state = boardController.getState();
-  const { transform, selectedCard, pinnedCards, highlightedLines, expandedMeta, dimmedCards, filters } = state;
+  const { transform, selectedCard, pinnedCards, highlightedLines, expandedMeta, dimmedCards } = state;
 
-  // Filter cards and lines based on current filters
-  const filteredData = useMemo(() => {
-    let filteredCards = cards.filter(card => {
-      if (!filters.kinds.has(card.kind)) return false;
-      if (filters.tags.size > 0 && !card.tags?.some(tag => filters.tags.has(tag))) return false;
-      return true;
-    });
-
-    if (filters.onlyConnected && selectedCard) {
-      const connectedIds = new Set([selectedCard]);
-      lines.forEach(line => {
-        if (line.source === selectedCard) connectedIds.add(line.target);
-        if (line.target === selectedCard) connectedIds.add(line.source);
-      });
-      filteredCards = filteredCards.filter(card => connectedIds.has(card.id));
-    }
-
-    const filteredCardIds = new Set(filteredCards.map(c => c.id));
-    const filteredLines = lines.filter(line => 
-      filteredCardIds.has(line.source) && filteredCardIds.has(line.target)
-    );
-
-    return { cards: filteredCards, lines: filteredLines };
-  }, [cards, lines, filters, selectedCard]);
+  // Show all cards - no filtering
+  const visibleCards = cards;
 
   // Handle mouse events for pan/zoom
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -119,73 +91,16 @@ export function Board({
     }
   }, [transform, boardController]);
 
-  // Keyboard navigation
+  // Initialize with overview on first load
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      
-      switch (e.key) {
-        case 'Escape':
-          boardController.setState({ selectedCard: undefined, highlightedLines: new Set() });
-          break;
-        case '0':
-          boardController.overview();
-          break;
-        case 'f':
-          setIsFilterDockOpen(prev => !prev);
-          break;
-        case 'm':
-          setIsMiniMapVisible(prev => !prev);
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [boardController]);
-
-  // Initialize board position
-  useEffect(() => {
-    const savedState = localStorage.getItem('boardState');
-    if (savedState && !isStoryMode) {
-      try {
-        const parsed = JSON.parse(savedState);
-        boardController.setState({
-          transform: parsed.transform,
-          filters: {
-            ...parsed.filters,
-            kinds: new Set(parsed.filters.kinds),
-            tags: new Set(parsed.filters.tags),
-          }
-        });
-      } catch (e) {
-        // Ignore invalid saved state
-      }
-    } else if (cards.length > 0) {
-      // Auto-overview on first load
-      boardController.overview();
+    if (cards.length > 0 && !controller) {
+      // Auto-overview on first load for standalone board
+      boardController.overview(0.5);
     }
-  }, [cards.length, boardController, isStoryMode]);
+  }, [cards.length, boardController, controller]);
 
-  // Frustum culling for performance
-  const visibleCards = useMemo(() => {
-    if (typeof window === 'undefined') return filteredData.cards;
-    
-    const viewBounds = {
-      left: -transform.x / transform.scale - 200,
-      right: (-transform.x + window.innerWidth) / transform.scale + 200,
-      top: -transform.y / transform.scale - 200,
-      bottom: (-transform.y + window.innerHeight) / transform.scale + 200,
-    };
-
-    return filteredData.cards.filter(card => {
-      if (!card.pos) return true;
-      return card.pos.x >= viewBounds.left && 
-             card.pos.x <= viewBounds.right &&
-             card.pos.y >= viewBounds.top && 
-             card.pos.y <= viewBounds.bottom;
-    });
-  }, [filteredData.cards, transform]);
+  // Render all cards - no frustum culling for simplicity
+  const renderCards = visibleCards;
 
   return (
     <div className={cn('relative w-full h-full overflow-hidden bg-board-bg', className)}>
@@ -206,9 +121,9 @@ export function Board({
           transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}
           style={{ transition: isDragging ? 'none' : 'transform var(--transition-board)' }}
         >
-          {/* Render lines first (behind cards) */}
+          {/* Render lines */}
           <g className="lines" style={{ zIndex: 'var(--z-lines)' }}>
-            {filteredData.lines.map(line => {
+            {lines.map(line => {
               const sourceCard = cards.find(c => c.id === line.source);
               const targetCard = cards.find(c => c.id === line.target);
               
@@ -242,7 +157,7 @@ export function Board({
             transition: isDragging ? 'none' : 'transform var(--transition-board)',
           }}
         >
-          {visibleCards.map(card => (
+          {renderCards.map(card => (
             <Card
               key={card.id}
               card={card}
@@ -258,38 +173,6 @@ export function Board({
         </div>
       </div>
 
-      {/* UI Overlays */}
-      {!isStoryMode && (
-        <>
-          {/* Filter Dock */}
-          <FilterDock
-            isOpen={isFilterDockOpen}
-            onToggle={() => setIsFilterDockOpen(!isFilterDockOpen)}
-            filters={filters}
-            onFiltersChange={(newFilters) => boardController.setState({ filters: newFilters })}
-            cards={cards}
-          />
-
-          {/* MiniMap */}
-          {isMiniMapVisible && (
-            <MiniMap
-              cards={visibleCards}
-              transform={transform}
-              onTransformChange={(newTransform) => boardController.setState({ transform: newTransform })}
-              className="absolute bottom-4 right-4"
-            />
-          )}
-
-          {/* Keyboard shortcuts help */}
-          <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 text-xs text-muted-foreground">
-            <div className="font-medium mb-2">Shortcuts</div>
-            <div>0 - Overview</div>
-            <div>F - Filters</div>
-            <div>M - MiniMap</div>
-            <div>ESC - Clear selection</div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

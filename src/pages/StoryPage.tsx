@@ -282,7 +282,7 @@ export default function StoryPage() {
         <Board
           cards={cards}
           lines={lines}
-          isStoryMode={true}
+          controller={boardController}
         />
         
         {/* Navigation Controls */}

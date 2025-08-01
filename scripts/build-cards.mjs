@@ -9,50 +9,54 @@ import { z } from 'zod';
 console.log('Loading Zod schemas...');
 
 const CardKindSchema = z.enum(['profile', 'goal', 'hobby', 'skill', 'project']);
-console.log('CardKindSchema created:', CardKindSchema);
-
 const LineKindSchema = z.enum(['uses', 'inspires', 'supports', 'relates']);
-console.log('LineKindSchema created:', LineKindSchema);
-
 const BadgeSchema = z.enum(['NEW', 'UPDATED', 'DRAFT']);
-console.log('BadgeSchema created:', BadgeSchema);
 
-// Test basic schema construction
-try {
-  const testSchema = z.string();
-  console.log('Basic string schema test:', testSchema);
-  testSchema.parse('test');
-  console.log('Basic string schema works');
-} catch (error) {
-  console.error('Basic Zod test failed:', error);
-  throw error;
+// Debug function to check schema shape
+function assertZodShape(name, schema) {
+  if (!schema || !schema._zod || schema._zod.def?.type !== 'object') return;
+  const shape = schema._zod.def.shape;
+  const bad = Object.entries(shape).filter(([_, v]) => !v || !v._zod);
+  if (bad.length) {
+    throw new Error(
+      `[${name}] invalid Zod shape entries: ` +
+      bad.map(([k]) => k).join(', ') +
+      `. Check imports/optional chaining.`
+    );
+  }
+  console.log(`✅ ${name} shape validation passed`);
 }
 
-// Build CardSchema step by step
+// Build schemas with explicit fallbacks
+const MediaSchema = z.object({
+  type: z.enum(['image', 'none']),
+  src: z.string().optional(),
+  alt: z.string().optional(),
+});
+
+const PosSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+});
+
+// Build CardSchema with safe references
 console.log('Building CardSchema...');
 const CardSchema = z.object({
   id: z.string(),
   kind: CardKindSchema,
   title: z.string(),
   subtitle: z.string().optional(),
-  media: z.object({
-    type: z.enum(['image', 'none']),
-    src: z.string().optional(),
-    alt: z.string().optional(),
-  }).optional(),
+  media: MediaSchema.optional(),
   tags: z.array(z.string()).optional(),
   badges: z.array(BadgeSchema).optional(),
   meta: z.record(z.any()).optional(),
   href: z.string().optional(),
-  pos: z.object({
-    x: z.number(),
-    y: z.number(),
-  }).optional(),
+  pos: PosSchema.optional(),
   body: z.string().optional(),
 }).passthrough();
 
-console.log('CardSchema created successfully:', CardSchema);
-console.log('CardSchema._zod:', CardSchema._zod);
+console.log('CardSchema created, checking shape...');
+assertZodShape('CardSchema', CardSchema);
 
 const LineSchema = z.object({
   id: z.string(),

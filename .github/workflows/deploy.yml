@@ -29,7 +29,7 @@ jobs:
       run: npm ci
     
     - name: Generate data files
-      run: npm run gen
+      run: node scripts/generate-data.mjs
     
     - name: Build
       run: npm run build

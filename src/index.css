@@ -2,95 +2,206 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Card Trail Mapping Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Base theme */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --board-bg: 248 250 252;
+    
+    /* Card type colors */
+    --card-profile: 107 114 128;    /* gray-500 */
+    --card-goal: 14 165 233;        /* sky-500 */
+    --card-hobby: 245 158 11;       /* amber-500 */
+    --card-skill: 34 197 94;        /* emerald-500 */
+    --card-project: 167 139 250;    /* violet-400 */
+    
+    /* Line type colors */
+    --line-uses: 34 197 94;         /* emerald-500 - solid + arrow */
+    --line-inspires: 245 158 11;    /* amber-500 - dashed + arrow */
+    --line-supports: 14 165 233;    /* sky-500 - thin solid + arrow */
+    --line-relates: 107 114 128;    /* gray-500 - dotted */
+    
+    /* Card base */
+    --card-base: 0 0% 100%;
+    --card-base-dark: 15 23 42;
+    --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --card-border: 226 232 240;
+    
+    /* Interactive states */
+    --card-hover: 241 245 249;
+    --card-selected: 59 130 246;
+    --card-dimmed: 0.25;
+    --card-pinned: 16 185 129;
+    
+    /* Badges */
+    --badge-new: 16 185 129;        /* emerald-500 */
+    --badge-updated: 245 158 11;    /* amber-500 */
+    --badge-draft: 107 114 128;     /* gray-500 */
+    
+    /* Animation timing */
+    --transition-board: 450ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-focus: 450ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-pulse: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-overview: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Layout */
+    --minimap-size: 200px;
+    --filter-dock-width: 280px;
+    --story-column-width: 400px;
+    
+    /* Z-index layers */
+    --z-board: 10;
+    --z-cards: 20;
+    --z-lines: 15;
+    --z-ui: 30;
+    --z-minimap: 40;
+    --z-filter-dock: 50;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  [data-theme="dark"] {
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+    --board-bg: 15 23 42;
+    
+    --card-base: 30 41 59;
+    --card-hover: 51 65 85;
+    --card-border: 51 65 85;
+    --card-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  }
+}
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+/* Card component styles */
+@layer components {
+  .card-trail {
+    @apply rounded-2xl border bg-card shadow-md transition-all duration-200;
+    border-color: hsl(var(--card-border));
+    box-shadow: var(--card-shadow);
+  }
+  
+  .card-trail:hover {
+    @apply shadow-lg;
+    background-color: hsl(var(--card-hover));
+  }
+  
+  .card-trail.selected {
+    @apply ring-2 ring-offset-2;
+    ring-color: hsl(var(--card-selected));
+  }
+  
+  .card-trail.dimmed {
+    opacity: var(--card-dimmed);
+  }
+  
+  .card-trail.pinned {
+    @apply ring-2 ring-offset-2;
+    ring-color: hsl(var(--card-pinned));
+  }
+  
+  /* Badge styles */
+  .badge-new {
+    @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200;
+    font-family: ui-monospace, "SF Mono", "Monaco", "Inconsolata", monospace;
+  }
+  
+  .badge-updated {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200;
+    font-family: ui-monospace, "SF Mono", "Monaco", "Inconsolata", monospace;
+  }
+  
+  .badge-draft {
+    @apply bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200;
+    font-family: ui-monospace, "SF Mono", "Monaco", "Inconsolata", monospace;
+  }
+  
+  /* Line styles */
+  .line-uses {
+    stroke: hsl(var(--line-uses));
+    stroke-dasharray: none;
+    marker-end: url(#arrow-uses);
+  }
+  
+  .line-inspires {
+    stroke: hsl(var(--line-inspires));
+    stroke-dasharray: 8 4;
+    marker-end: url(#arrow-inspires);
+  }
+  
+  .line-supports {
+    stroke: hsl(var(--line-supports));
+    stroke-dasharray: none;
+    stroke-width: 1;
+    marker-end: url(#arrow-supports);
+  }
+  
+  .line-relates {
+    stroke: hsl(var(--line-relates));
+    stroke-dasharray: 4 2;
+  }
+  
+  /* Animation utilities */
+  .animate-pulse-card {
+    animation: pulse-card var(--transition-pulse) ease-in-out 2;
+  }
+  
+  .animate-pop-in {
+    animation: pop-in 200ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+@keyframes pulse-card {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+@keyframes pop-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+/* Focus and accessibility */
+@layer utilities {
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+  
+  .sr-only-focusable {
+    @apply sr-only;
+  }
+  
+  .sr-only-focusable:focus {
+    @apply not-sr-only absolute z-50 bg-background p-2 text-foreground shadow-lg;
   }
 }
 

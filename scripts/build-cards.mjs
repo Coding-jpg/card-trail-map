@@ -120,7 +120,30 @@ class CardBuilder {
       
       // Validate card with detailed error handling
       try {
+        console.log(`About to validate card for ${filePath}:`);
+        console.log('Card data:', JSON.stringify(card, null, 2));
+        console.log('CardSchema has _zod:', !!CardSchema._zod);
+        console.log('CardSchema shape:', Object.keys(CardSchema._zod.def.shape));
+        
+        // Check nested schemas
+        const mediaSchema = CardSchema._zod.def.shape.media;
+        console.log('Media schema exists:', !!mediaSchema);
+        if (mediaSchema) {
+          console.log('Media schema type:', mediaSchema.constructor.name);
+          console.log('Media schema _zod:', !!mediaSchema._zod);
+        }
+        
+        const posSchema = CardSchema._zod.def.shape.pos;
+        console.log('Pos schema exists:', !!posSchema);
+        if (posSchema) {
+          console.log('Pos schema type:', posSchema.constructor.name);
+          console.log('Pos schema _zod:', !!posSchema._zod);
+        }
+        
+        console.log('Starting safeParse...');
         const cardResult = CardSchema.safeParse(card);
+        console.log('safeParse completed');
+        
         if (!cardResult.success) {
           this.errors.push({
             type: 'validation',
@@ -130,6 +153,8 @@ class CardBuilder {
           return;
         }
       } catch (error) {
+        console.error('Error during validation:', error);
+        console.error('Error stack:', error.stack);
         this.errors.push({
           type: 'validation',
           message: `Zod validation crashed: ${error.message} (at: ${error.stack})`,

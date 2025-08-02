@@ -1,84 +1,79 @@
-import { useNavigate } from "react-router-dom";
-import { useBoardData } from "@/hooks/useData";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+
+type Card = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  kind: string;
+  pos?: { x: number; y: number };
+};
+type Line = { id: string; source: string; target: string; kind: string };
 
 export default function BoardPage() {
-  const navigate = useNavigate();
-  const { cards, lines, isLoading, error } = useBoardData();
+  const [cards, setCards] = useState<Card[]>([]);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleCardDoubleClick = (cardId: string) => {
-    const card = cards.find((c) => c.id === cardId);
-    if (card?.href) navigate(card.href);
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        const cardsUrl =
+          "https://coding-jpg.github.io/card-trail-map/cards.json";
+        const linesUrl =
+          "https://coding-jpg.github.io/card-trail-map/lines.json";
+        console.log("[probe] fetching", cardsUrl, linesUrl);
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <div className="space-y-4 text-center">
-          <Skeleton className="h-8 w-64 mx-auto" />
-          <Skeleton className="h-4 w-48 mx-auto" />
-          <div className="grid grid-cols-3 gap-4 mt-8">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-32" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+        const [cr, lr] = await Promise.all([fetch(cardsUrl), fetch(linesUrl)]);
+        console.log("[probe] status", cr.status, lr.status);
 
-  if (error) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center p-4">
-        <Alert className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load board data. Please check that cards.json and
-            lines.json exist in the public directory.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+        if (!cr.ok) throw new Error("cards " + cr.status);
+        if (!lr.ok) throw new Error("lines " + lr.status);
 
-  // ✅ 临时渲染：不用 <Board />，直接把卡片渲染成网格，确认数据到了
+        const [c, l] = await Promise.all([cr.json(), lr.json()]);
+        console.log("[probe] lengths", c?.length, l?.length);
+        setCards(Array.isArray(c) ? c : []);
+        setLines(Array.isArray(l) ? l : []);
+      } catch (e: any) {
+        console.error("[probe] error", e);
+        setErr(String(e?.message ?? e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <div style={{ padding: 24 }}>Loading…</div>;
+  if (err) return <div style={{ padding: 24, color: "red" }}>Error: {err}</div>;
+
   return (
-    <div className="w-full min-h-screen p-6">
-      <div className="mb-4 text-sm opacity-70">
+    <div style={{ padding: 24 }}>
+      <div style={{ opacity: 0.7, marginBottom: 12 }}>
         cards: {cards.length} · lines: {lines.length}
       </div>
-
       {cards.length === 0 ? (
-        <div className="text-center opacity-70">No cards loaded.</div>
+        <div>No cards.</div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+          }}
+        >
           {cards.map((c) => (
-            <button
+            <div
               key={c.id}
-              onDoubleClick={() => handleCardDoubleClick(c.id)}
-              className="text-left rounded-lg border p-4 hover:shadow transition"
-              title={c.id}
+              style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}
             >
-              <div className="text-xs opacity-60 mb-1">{c.kind}</div>
-              <div className="font-semibold">{c.title}</div>
+              <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 4 }}>
+                {c.kind}
+              </div>
+              <div style={{ fontWeight: 600 }}>{c.title}</div>
               {c.subtitle && (
-                <div className="text-sm opacity-80">{c.subtitle}</div>
+                <div style={{ fontSize: 13, opacity: 0.85 }}>{c.subtitle}</div>
               )}
-              {Array.isArray(c.tags) && c.tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {c.tags.slice(0, 5).map((t) => (
-                    <span
-                      key={t}
-                      className="text-xs px-2 py-0.5 rounded-full bg-black/5"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </button>
+            </div>
           ))}
         </div>
       )}

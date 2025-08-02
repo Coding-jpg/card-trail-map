@@ -1,23 +1,28 @@
-import { useNavigate } from 'react-router-dom';
-import { Board } from '@/components/Board';
-import { useBoardData } from '@/hooks/useData';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { Board } from "@/components/Board";
+import { useBoardData } from "@/hooks/useData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function BoardPage() {
   const navigate = useNavigate();
   const { cards, lines, isLoading, error } = useBoardData();
 
+  // 关键：把没有/异常的坐标归一化为一个网格，确保初次渲染可见
+  const normalizedCards = cards.map((c, i) => ({
+    ...c,
+    pos: c.pos ?? { x: (i % 5) * 180, y: Math.floor(i / 5) * 140 },
+  }));
+
   const handleCardSelect = (cardId: string) => {
-    // Update URL without navigation to preserve state
     const url = new URL(window.location.href);
-    url.searchParams.set('selected', cardId);
-    window.history.replaceState(null, '', url.toString());
+    url.searchParams.set("selected", cardId);
+    window.history.replaceState(null, "", url.toString());
   };
 
   const handleCardDoubleClick = (cardId: string) => {
-    const card = cards.find(c => c.id === cardId);
+    const card = cards.find((c) => c.id === cardId);
     if (card?.href) {
       navigate(card.href);
     }
@@ -45,7 +50,8 @@ export default function BoardPage() {
         <Alert className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load board data. Please check that cards.json and lines.json exist in the public directory.
+            Failed to load board data. Please check that cards.json and
+            lines.json exist in the public directory.
           </AlertDescription>
         </Alert>
       </div>
@@ -53,9 +59,9 @@ export default function BoardPage() {
   }
 
   return (
-    <div className="w-full h-screen">
+    <div className="w-full h-screen relative">
       <Board
-        cards={cards}
+        cards={normalizedCards}
         lines={lines}
         onCardSelect={handleCardSelect}
         onCardDoubleClick={handleCardDoubleClick}
